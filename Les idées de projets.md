@@ -47,3 +47,20 @@
 ## 9. Données d'affluence en live
 - **Salles de fitness :** Les membres veulent éviter les heures de pointe. Il y a des centaines de clients potentiels en Suisse, et c'est testable dans la salle de sport de l'école ou d'un club local.
 - **Terrasses et restaurants :** « Est-ce que je trouverai une table sans réserver ? » Le marché est énorme, et vous pouvez tester avec un café partenaire.
+
+## 10. Indicateur lumineux pour bureaux
+- **Pain :** dans les bureaux open-space il est difficile de savoir quand un-e collègue est occupé, libre ou ne souhaite simplement pas être dérangé-e. 
+- **Client :** entreprises avec des open-space ou qui partagent des bureaux (=pas de bureaux fixes)
+- **Tech :** LED fixée sur les bureaux/écrans reliée soit à une interface avec des boutons, encore mieux si c'est directement relié au Teams (ou programme de communication utilisé par l'entreprise) de la personne
+
+## 11. Réglage fair-play de tâches ménagères pour coloc
+- **Pain :** en colocation souvant il y a quelqu'un qui évite les tâches ménagères communes
+- **Idée :** si une tâche n'est pas faite dans les temps, lumière apparait sur le "token" et ne peut être désactivée seulement si "token" est scanner et approuvé par la prochaine personne en charge de la tâche (parce que "honest system" ne marche jamais)
+- **Client :** personnes qui font de la colocations (aka les étudiants), familles avec des enfants
+- **Tech :** tag et capteur NFC + LED ou visuel lumineux
+
+## 12. Détecteur de CO2
+- **Pain :** le surplus de CO2 entraine la fatigue et la déconstration
+- **Idée :** détecte si le niveau de CO2 est trop élevé et indique quand ouvrir les fenêtres (encore mieux si dans les batiments modernes où les fenêtres peuvent s'ouvrir toutes seules avec un système relié au-x capteur-s)
+- **Client :** toutes entreprises avec des bureaux fermés, écoles ou toutes personnes avec des pièces fermées
+- **Tech :** détecteur de CO2
