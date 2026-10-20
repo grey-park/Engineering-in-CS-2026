@@ -1,17 +1,26 @@
-*	Boitier rechargeable avec boutons et leds fonctionnel.
-*	Routeur (broker MQTT) Fonctionnel.
-*	Communication entre boitier et routeur en local. 
-*	Micro fonctionnel sur boitier.
-*	Interprétation Speech to Text sur le serveur.
-*	Modèle local pour résumer la demande sur le routeur.
-*	Mise en place de Devices / Montres MQTT.
-*	Envoie et transmission sur montre / Autres Devices.
-*	Tableau de bord administrateur.
-*	Démo fonctionnel.
-*	Test du produit dans un bar.
+# TapServe : objectifs de rating.
 
-BONUS:
-*	Affichage via une application sur android pour les tablettes cuisine et le rendu gérant.
+| # | Objectif | Points |
+|---|---|---|
+| 1 | Boîtier rechargeable avec boutons et LED fonctionnel | 3 |
+| 2 | Routeur (broker MQTT) fonctionnel | 2 |
+| 3 | Communication entre boîtier et routeur en local | 3 |
+| 4 | Mise en place de Devices / Montres MQTT | 2 |
+| 5 | Envoi et transmission sur montre / autres Devices | 3 |
+| 6 | Tableau de bord administrateur | 3 |
+| 7 | Démo fonctionnelle | 4 |
+| | **Total** | **20** |
+
+## Bonus
+
+| # | Objectif | Points |
+|---|---|---|
+| B1 | Micro fonctionnel sur boîtier | 2 |
+| B2 | Interprétation Speech to Text sur le serveur | 3 |
+| B3 | Modèle local pour résumer la demande sur le routeur | 3 |
+| B4 | Test du produit dans un bar | 2 |
+| B5 | Application Android pour les tablettes cuisine et le rendu gérant | 2 |
+| | **Total bonus** | **12** |
 
 
 # TapServe : liste de matériel et coûts (magasins suisses)
