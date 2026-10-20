@@ -33,8 +33,9 @@ Prix relevés le 13.10.2026 dans des magasins suisses, TVA incluse, hors frais d
 | Résistances 100 kΩ (mesure de la batterie) | 2 | — | ≈ 0.10 | ≈ 0.20 | |
 | Vis M3 × 10 auto-taraudeuses et patins antidérapants | 4 + 4 | — | — | ≈ 2.00 | |
 | Coque et fond imprimés en 3D (PLA, environ 60 g) | 1 | — | — | ≈ 2.00 | |
-| **À acheter par boîtier** | | | | **≈ 40** | Sans les boutons ni la SuperMini |
-| **À acheter pour 3 boîtiers** | | | | **≈ 120** | |
+| Convertisseur 5 V (MT3608) | 1 | — | ≈ 2.00 | ≈ 2.00 | LED des boutons en 5 V (batterie 3,7 V) |
+| **À acheter par boîtier** | | | | **≈ 42** | Sans les boutons ni la SuperMini |
+| **À acheter pour 3 boîtiers** | | | | **≈ 125** | |
 
 ## Récepteur montre
 
@@ -53,25 +54,25 @@ Prix relevés le 13.10.2026 dans des magasins suisses, TVA incluse, hors frais d
 
 | Élément | Qté | Magasin | Prix (CHF) | Remarque |
 |---|---|---|---|---|
-| Raspberry Pi 5, 2 Go | 1 | Galaxus | 92.90 (v) | 2 Go suffisent pour le broker et le tableau de bord |
+| Raspberry Pi 5, 8 Go | 1 | Galaxus | ≈ 135 | 8 Go nécessaires pour le speech to text et le modèle local |
 | Alimentation officielle Raspberry Pi 27 W USB-C | 1 | — | ≈ 15 | |
 | Carte microSD 32 Go | 1 | — | ≈ 12 | |
 | Boîtier imprimé en 3D | 1 | — | ≈ 2 | |
-| ESP32 ESP-WROOM-32 (passerelle) | 1 | Bastelgarage | 5.90 (v) | |
-| **Total** | | | **≈ 128** | |
+| **Total** | | | **≈ 165** | |
 
 ## Récapitulatif
 
 | Poste | Total (CHF) |
 |---|---|
-| 3 boîtiers (à acheter) | ≈ 120 |
+| 3 boîtiers (à acheter) | ≈ 125 |
 | Récepteur montre | ≈ 95–125 |
 | Récepteur admin | 0 |
-| Routeur / broker | ≈ 128 |
-| **Total à acheter** | **≈ 340–370** |
+| Routeur / broker | ≈ 165 |
+| **Total à acheter** | **≈ 385–415** |
 
 ## Remarques
 
+- Boîtier → routeur en Wi-Fi / MQTT (pas d'ESP-NOW : l'audio du micro dépasse 250 octets par message). Pas de passerelle ESP32.
 - Les boutons arcade et les ESP32-C3 SuperMini sont déjà en main : ils ne sont pas comptés dans les totaux.
 - Les petites pièces (TP4056, MOSFET, interrupteurs) coûtent beaucoup moins cher sur AliExpress, par exemple environ 0.50 CHF pour un TP4056 contre 10.90 CHF chez Digitec. Comptez 2 à 3 semaines de délai.
 - Coût d'un boîtier au détail en Suisse, boutons et SuperMini compris : environ 50–60 CHF. En volume, avec des composants importés : environ 15 CHF.
@@ -82,6 +83,5 @@ Prix relevés le 13.10.2026 dans des magasins suisses, TVA incluse, hors frais d
 - [Bastelgarage – Arcade Taster beleuchtet 33mm](https://www.bastelgarage.ch/arcade-taster-button-beleuchtet-33mm-weiss)
 - [Bastelgarage – I2S Mikrofon Modul](https://www.bastelgarage.ch/i2s-mikrofon-modul)
 - [Bastelgarage – LiPo Akku 2000mAh](https://www.bastelgarage.ch/lipo-akku-2000mah-jst-1-25-lithium-ion-polymer)
-- [Bastelgarage – ESP32 ESP-WROOM-32](https://www.bastelgarage.ch/esp32-esp-wroom-32)
 - [Digitec – TP4056 USB-C](https://www.digitec.ch/en/s1/product/purecrea-tp4056-lithium-lipo-akku-batterie-lademodul-usb-c-5v-1a-single-board-computer-kits-48003317)
 - [LilyGO – T-Watch S3](https://lilygo.cc/en-pl/products/t-watch-s3)
