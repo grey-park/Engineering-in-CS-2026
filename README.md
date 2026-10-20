@@ -25,8 +25,7 @@
 
 # TapServe : liste de matériel et coûts (magasins suisses)
 
-Prix relevés le 13.10.2026 dans des magasins suisses, TVA incluse, hors frais de port.
-(v) = prix vérifié sur le site du magasin, ≈ = estimation
+Prix suissse estimation
 
 ## Matériel par boîtier (× 3)
 
