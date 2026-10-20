@@ -70,12 +70,6 @@ Prix relevés le 13.10.2026 dans des magasins suisses, TVA incluse, hors frais d
 | Routeur / broker | ≈ 165 |
 | **Total à acheter** | **≈ 385–415** |
 
-## Remarques
-
-- Boîtier → routeur en Wi-Fi / MQTT (pas d'ESP-NOW : l'audio du micro dépasse 250 octets par message). Pas de passerelle ESP32.
-- Les boutons arcade et les ESP32-C3 SuperMini sont déjà en main : ils ne sont pas comptés dans les totaux.
-- Les petites pièces (TP4056, MOSFET, interrupteurs) coûtent beaucoup moins cher sur AliExpress, par exemple environ 0.50 CHF pour un TP4056 contre 10.90 CHF chez Digitec. Comptez 2 à 3 semaines de délai.
-- Coût d'un boîtier au détail en Suisse, boutons et SuperMini compris : environ 50–60 CHF. En volume, avec des composants importés : environ 15 CHF.
 
 ## Sources
 
