@@ -7,20 +7,20 @@
 | 3 | Communication entre boîtier et routeur en local | 3 |
 | 4 | Mise en place de Devices / Montres MQTT | 2 |
 | 5 | Envoi et transmission sur montre / autres Devices | 3 |
-| 6 | Tableau de bord administrateur | 3 |
-| 7 | Démo fonctionnelle | 4 |
-| | **Total** | **20** |
+| 6 | Micro fonctionnel sur boîtier | 3 |
+| 7 | Interprétation Speech to Text sur le serveur | 2 |
+| 8 | Tableau de bord administrateur | 3 |
+| 9 | Démo fonctionnelle | 4 |
+| | **Total** | **25** |
 
 ## Bonus
 
 | # | Objectif | Points |
 |---|---|---|
-| B1 | Micro fonctionnel sur boîtier | 2 |
-| B2 | Interprétation Speech to Text sur le serveur | 3 |
-| B3 | Modèle local pour résumer la demande sur le routeur | 3 |
-| B4 | Test du produit dans un bar | 2 |
-| B5 | Application Android pour les tablettes cuisine et le rendu gérant | 2 |
-| | **Total bonus** | **12** |
+| B1 | Modèle local pour résumer la demande sur le routeur | 2 |
+| B2 | Test du produit dans un bar | 3 |
+| B3 | Application Android pour les tablettes cuisine et le rendu gérant | 3 |
+| | **Total bonus** | **8** |
 
 
 # TapServe : liste de matériel et coûts (magasins suisses)
