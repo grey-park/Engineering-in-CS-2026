@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TapServe - Gérant</title>
+<style>
+  :root {
+    --bg: #f5f4f8; --card: #ffffff; --ink: #1d1b26; --muted: #6b6879; --line: #e4e2ec;
+    --accent: #6d4aff; --appel: #e8862a; --addition: #2f8fd8; --encore: #3aa55d; --late: #d93f3f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14131a; --card: #1e1c27; --ink: #eeedf4; --muted: #9b98ab; --line: #2e2b3a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: var(--accent); color: #fff; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: .3px; }
+  .status { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #bbb; }
+  .dot.on { background: #6cf09a; box-shadow: 0 0 8px #6cf09a; }
+  .head-right { display: flex; align-items: center; gap: 16px; }
+  .reset { background: transparent; color: rgba(255,255,255,.75); border: 1px solid rgba(255,255,255,.35);
+           border-radius: 6px; padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+  .reset:hover { color: #fff; border-color: #fff; }
+  .reset:disabled { opacity: .5; cursor: default; }
+  .sound.on { color: #fff; border-color: #6cf09a; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; display: grid; gap: 18px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .tile, section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .tile .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .tile .v { font-size: 28px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  h2 { margin: 0 0 10px; font-size: 15px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+  .pending { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .call { border-radius: 10px; padding: 12px 14px; color: #fff; }
+  .call .t { font-size: 26px; font-weight: 800; }
+  .call .w { font-variant-numeric: tabular-nums; opacity: .95; }
+  .call.late { outline: 3px solid var(--late); outline-offset: 2px; }
+  .call .presses { margin-top: 6px; font-size: 12px; opacity: .9; }
+  /* client insistant */
+  .call.insist { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px #ff6a00; }
+  .call.insist.late { outline-offset: 8px; }
+  .appel { background: var(--appel); } .addition { background: var(--addition); } .encore { background: var(--encore); }
+  .empty { color: var(--muted); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; color: #fff; font-size: 12px; }
+  .st-claimed { color: var(--encore); } .st-cancelled { color: var(--muted); } .st-pending { color: var(--appel); }
+  a.reset { text-decoration: none; }
+  .tile.alert .v { color: var(--late); }
+  .call .done { margin-top: 8px; background: rgba(255,255,255,.92); color: #1d1b26; border: 0; border-radius: 6px;
+                padding: 3px 12px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .call .done:disabled { opacity: .6; cursor: default; }
+  .devices { display: flex; flex-wrap: wrap; gap: 8px; }
+  .dev { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+  .dev .dot { background: var(--late); } .dev .dot.on { background: var(--encore); box-shadow: none; }
+  .dev small { color: var(--muted); }
+  .chart svg { width: 100%; height: auto; display: block; }
+  .chart .bar { fill: var(--accent); } .chart .bar.today { fill: var(--appel); }
+  .chart text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+  .chart .val { fill: var(--ink); font-weight: 600; }
+  .chart .axis { stroke: var(--line); }
+</style>
+</head>
+<body>
+<header>
+  <h1>TapServe</h1>
+  <div class="head-right">
+    <div class="status"><span class="dot" id="gwdot"></span><span id="gwtxt">Broker MQTT...</span></div>
+    <button class="reset sound" id="soundBtn" type="button" title="Bip à chaque nouvel appel">Activer le son</button>
+    <button class="reset" id="testBtn" type="button" title="Crée un appel de test (table 99) qui passe par tout le système">Appel de test</button>
+    <a class="reset" href="/export.csv" title="Télécharger tout l'historique (Excel)">Export CSV</a>
+    <button class="reset" id="resetBtn" type="button" title="Effacer tous les appels et les statistiques">Réinitialiser</button>
+  </div>
+</header>
+<main>
+  <div class="tiles">
+    <div class="tile"><div class="k">Appels en attente</div><div class="v" id="nPending">-</div></div>
+    <div class="tile"><div class="k">Appels aujourd'hui</div><div class="v" id="nTotal">-</div></div>
+    <div class="tile"><div class="k">Temps de réponse moyen</div><div class="v" id="avgResp">-</div></div>
+    <div class="tile"><div class="k">Pire attente</div><div class="v" id="maxResp">-</div></div>
+    <div class="tile" id="lateTile"><div class="k" id="lateLabel">En retard</div><div class="v" id="nLate">-</div></div>
+  </div>
+
+  <section>
+    <h2>En attente</h2>
+    <div class="pending" id="pending"></div>
+  </section>
+
+  <section>
+    <h2>Appareils</h2>
+    <div class="devices" id="devices"></div>
+  </section>
+
+  <div class="cols">
+    <section class="chart">
+      <h2>Appels par heure (24 h)</h2>
+      <div id="chartHour"></div>
+    </section>
+    <section class="chart">
+      <h2>Appels par jour (14 jours)</h2>
+      <div id="chartDay"></div>
+    </section>
+  </div>
+
+  <div class="cols">
+    <section>
+      <h2>Par table (aujourd'hui)</h2>
+      <table><thead><tr><th>Table</th><th>Appels</th><th>Réponse moy.</th><th>Batterie</th></tr></thead>
+        <tbody id="perTable"></tbody></table>
+    </section>
+    <section>
+      <h2>Derniers appels</h2>
+      <table><thead><tr><th>Heure</th><th>Table</th><th>Type</th><th>Statut</th></tr></thead>
+        <tbody id="recent"></tbody></table>
+    </section>
+  </div>
+</main>
+<script>
+  const LABEL = { appel: "Appel", addition: "Addition", encore: "Encore" };
+  const STATUS = { pending: "en attente", claimed: "pris en charge", cancelled: "annulé" };
+  let state = null, skew = 0;
+
+  // son (il faut un clic pour l'activer)
+  const SOUND_KEY = "tapserve.sound";
+  const soundBtn = document.getElementById("soundBtn");
+  let audioCtx = null;
+  let soundWanted = false;
+  try { soundWanted = localStorage.getItem(SOUND_KEY) === "1"; } catch (e) {}
+
+  const soundActive = () => soundWanted && audioCtx && audioCtx.state === "running";
+
+  function updateSoundBtn() {
+    const on = soundActive();
+    soundBtn.textContent = on ? "Son activé" : "Activer le son";
+    soundBtn.classList.toggle("on", on);
+    soundBtn.title = on ? "Cliquer pour couper le son" : "Bip à chaque nouvel appel";
+  }
+
+  function saveSound(v) {
+    soundWanted = v;
+    try { localStorage.setItem(SOUND_KEY, v ? "1" : "0"); } catch (e) {}
+  }
+
+  function makeAudioCtx() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    const ctx = new AC();
+    ctx.onstatechange = updateSoundBtn;
+    return ctx;
+  }
+
+  soundBtn.addEventListener("click", async () => {
+    if (soundActive()) { saveSound(false); updateSoundBtn(); return; }  // couper
+    if (!audioCtx) audioCtx = makeAudioCtx();
+    if (!audioCtx) { soundBtn.textContent = "Son non disponible"; return; }
+    try { await audioCtx.resume(); } catch (e) {}
+    saveSound(true);
+    updateSoundBtn();
+  });
+
+  if (soundWanted) {
+    audioCtx = makeAudioCtx();
+    if (audioCtx) audioCtx.resume().catch(() => {}).finally(updateSoundBtn);
+  }
+  updateSoundBtn();
+
+  function beep() {
+    if (!soundActive()) return;
+    const t0 = audioCtx.currentTime + 0.02;
+    [[880, 0], [1320, 0.17]].forEach(([freq, dt]) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const t = t0 + dt;
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.16);
+    });
+  }
+
+  // pas de bip au chargement
+  const seenIds = new Set();
+  let firstState = true;
+  function checkNewCalls(pending) {
+    let fresh = 0;
+    for (const c of pending) {
+      if (!seenIds.has(c.id)) { seenIds.add(c.id); fresh++; }
+    }
+    if (firstState) { firstState = false; return 0; }
+    if (fresh) beep();
+    return fresh;
+  }
+
+  document.getElementById("resetBtn").addEventListener("click", async e => {
+    if (!confirm("Effacer tous les appels et les statistiques ?")) return;
+    e.target.disabled = true;
+    try {
+      const r = await fetch("/api/reset", { method: "POST" });
+      if (!r.ok) throw new Error(r.status);
+    } catch (err) {
+      alert("Échec de la réinitialisation (" + err.message + ")");
+    } finally {
+      e.target.disabled = false;
+    }
+  });
+
+  const fmt = s => s == null ? "-" : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+  const hhmm = t => new Date(t * 1000).toLocaleTimeString("fr-CH", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const batt = mv => {
+    if (!mv) return "-";
+    const pct = Math.max(0, Math.min(100, Math.round((mv - 3300) / (4200 - 3300) * 100)));
+    return `${pct} % (${(mv / 1000).toFixed(2)} V)`;
+  };
+
+  const TEST_TABLE = 99;
+  const tableName = t => t === TEST_TABLE ? "Test" : `Table ${t}`;
+
+  document.getElementById("testBtn").addEventListener("click", async e => {
+    e.target.disabled = true;
+    try { await fetch("/api/test", { method: "POST" }); } finally { e.target.disabled = false; }
+  });
+
+  // bouton "Fait"
+  document.getElementById("pending").addEventListener("click", async e => {
+    const b = e.target.closest("button.done");
+    if (!b) return;
+    b.disabled = true;
+    try {
+      const r = await fetch(`/api/claim/${b.dataset.id}`, { method: "POST" });
+      if (!r.ok) b.disabled = false;
+    } catch (err) { b.disabled = false; }
+  });
+
+  function renderPending() {
+    if (!state) return;
+    const now = Date.now() / 1000 - skew;
+    const el = document.getElementById("pending");
+    if (!state.pending.length) { el.innerHTML = '<div class="empty">Aucun appel en attente.</div>'; return; }
+    el.innerHTML = state.pending.map(c => {
+      const w = now - c.t_call;
+      const n = c.press_count || 1;
+      return `<div class="call ${c.kind} ${w > state.alert_s ? "late" : ""} ${n >= 3 ? "insist" : ""}">
+        <div class="t">${tableName(c.table_no)}</div>
+        <div>${LABEL[c.kind] || c.kind}</div>
+        <div class="w">depuis ${fmt(w)}</div>
+        ${n >= 2 ? `<div class="presses">Impatience : ${n}x</div>` : ""}
+        <button class="done" type="button" data-id="${c.id}">Fait</button></div>`;
+    }).join("");
+    const late = state.pending.filter(c => now - c.t_call > state.alert_s).length;
+    document.getElementById("nLate").textContent = late;
+    document.getElementById("lateTile").classList.toggle("alert", late > 0);
+  }
+
+  // graphique en barres (pas d'Internet sur le Pi)
+  function bars(el, items, valueOf, titleOf) {
+    const W = 600, H = 170, top = 18, bottom = 24, n = items.length;
+    const max = Math.max(1, ...items.map(valueOf));
+    const step = W / n, bw = Math.max(4, step * 0.7);
+    const every = n > 16 ? 3 : 1;
+    const parts = items.map((it, i) => {
+      const v = valueOf(it), h = (H - top - bottom) * v / max;
+      const x = i * step + (step - bw) / 2, y = H - bottom - h;
+      return `<g><title>${titleOf(it)}</title>
+        <rect class="bar ${it.today ? "today" : ""}" x="${x}" y="${y}" width="${bw}" height="${Math.max(h, v ? 1 : 0)}" rx="2"/>
+        ${v ? `<text class="val" x="${x + bw / 2}" y="${y - 4}" text-anchor="middle">${v}</text>` : ""}
+        ${i % every === 0 || i === n - 1 ? `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${it.label}</text>` : ""}</g>`;
+    }).join("");
+    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"><line class="axis" x1="0" x2="${W}" y1="${H - bottom}" y2="${H - bottom}"/>${parts}</svg>`;
+  }
+
+  function renderDevices(devs) {
+    const el = document.getElementById("devices");
+    if (!devs.length) { el.innerHTML = '<div class="empty">Aucun appareil n\'a encore donné de nouvelles.</div>'; return; }
+    el.innerHTML = devs.map(d =>
+      `<div class="dev"><span class="dot ${d.online ? "on" : ""}"></span>${d.name}
+       <small>${d.online ? "en ligne" : "hors ligne"} depuis ${hhmm(d.since).slice(0, 5)}</small></div>`).join("");
+  }
+
+  function render(s) {
+    state = s;
+    skew = Date.now() / 1000 - s.now;
+    document.getElementById("gwdot").classList.toggle("on", s.mqtt_online);
+    document.getElementById("gwtxt").textContent = s.mqtt_online ? "Broker MQTT connecté" : "Broker MQTT hors ligne";
+    document.getElementById("nPending").textContent = s.pending.length;
+    document.getElementById("nTotal").textContent = s.stats.total ?? 0;
+    document.getElementById("avgResp").textContent = fmt(s.stats.avg_resp);
+    document.getElementById("maxResp").textContent = fmt(s.stats.max_resp);
+
+    document.getElementById("lateLabel").textContent = `En retard (> ${fmt(s.alert_s)})`;
+    renderDevices(s.devices || []);
+    bars(document.getElementById("chartHour"), s.hourly, d => d.n, d => `${d.label} : ${d.n} appel(s)`);
+    bars(document.getElementById("chartDay"), s.daily, d => d.n,
+         d => `${d.label} : ${d.n} appel(s)${d.avg_resp != null ? ", réponse moyenne " + fmt(d.avg_resp) : ""}`);
+
+    const bat = Object.fromEntries(s.batteries.map(b => [b.table_no, b.battery_mv]));
+    document.getElementById("perTable").innerHTML = s.per_table.map(r =>
+      `<tr><td>${tableName(r.table_no)}</td><td>${r.n}</td><td>${fmt(r.avg_resp)}</td><td>${batt(bat[r.table_no])}</td></tr>`
+    ).join("") || '<tr><td colspan="4" class="empty">Pas encore d\'appel.</td></tr>';
+
+    document.getElementById("recent").innerHTML = s.recent.map(c =>
+      `<tr><td>${hhmm(c.t_call)}</td><td>${c.table_no === TEST_TABLE ? "Test" : c.table_no}</td>
+       <td><span class="tag ${c.kind}">${LABEL[c.kind] || c.kind}</span></td>
+       <td class="st-${c.status}">${STATUS[c.status]}${c.t_claim ? " - " + fmt(c.t_claim - c.t_call) : ""}</td></tr>`
+    ).join("") || '<tr><td colspan="4" class="empty">Pas encore d\'appel.</td></tr>';
+
+    renderPending();
+    checkNewCalls(s.pending);
+  }
+
+  const es = new EventSource("/events");
+  es.onmessage = e => render(JSON.parse(e.data));
+  es.onerror = () => { document.getElementById("gwtxt").textContent = "Serveur injoignable"; document.getElementById("gwdot").classList.remove("on"); };
+  setInterval(renderPending, 1000);
+</script>
+</body>
+</html>

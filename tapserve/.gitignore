@@ -1,0 +1,15 @@
+# Secrets (mot de passe Wi-Fi) : voir common/secrets.example.h
+common/secrets.h
+
+# PlatformIO et Python
+.pio/
+.venv/
+__pycache__/
+
+# Bases de données du serveur
+server/*.db
+server/*.db-*
+
+# Ancienne passerelle ESP-NOW, plus utilisée
+_to_delete/
+CLAUDE.md
