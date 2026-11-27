@@ -32,7 +32,8 @@
   .tile .v { font-size: 28px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
   h2 { margin: 0 0 10px; font-size: 15px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
   .pending { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
-  .call { border-radius: 10px; padding: 12px 14px; color: #fff; }
+  .call { border-radius: 10px; padding: 12px 14px; color: #fff; cursor: pointer; user-select: none; }
+  .call.busy { opacity: .45; }
   .call .t { font-size: 26px; font-weight: 800; }
   .call .w { font-variant-numeric: tabular-nums; opacity: .95; }
   .call.late { outline: 3px solid var(--late); outline-offset: 2px; }
@@ -229,15 +230,24 @@
   });
 
   // bouton "Fait"
-  document.getElementById("pending").addEventListener("click", async e => {
-    const b = e.target.closest("button.done");
-    if (!b) return;
-    b.disabled = true;
+  // pointerdown (et non click) : les cartes sont redessinées chaque seconde, un clic à cheval sur
+  // un redessin serait perdu. pointerdown réagit dès l'appui, à la souris comme au doigt.
+  document.getElementById("pending").addEventListener("pointerdown", async e => {
+    // toute la carte est cliquable (le bouton « Fait » reste comme repère visuel)
+    const card = e.target.closest(".call[data-id]");
+    if (!card || claiming.has(card.dataset.id)) return;
+    const id = card.dataset.id;
+    claiming.add(id);
+    card.classList.add("busy");
     try {
-      const r = await fetch(`/api/claim/${b.dataset.id}`, { method: "POST" });
-      if (!r.ok) b.disabled = false;
-    } catch (err) { b.disabled = false; }
+      const r = await fetch(`/api/claim/${id}`, { method: "POST" });
+      if (!r.ok) throw new Error(r.status);
+    } catch (err) {
+      claiming.delete(id);
+      renderPending();
+    }
   });
+  const claiming = new Set();  // appels en cours de validation (évite les doubles clics)
 
   function renderPending() {
     if (!state) return;
@@ -247,7 +257,7 @@
     el.innerHTML = state.pending.map(c => {
       const w = now - c.t_call;
       const n = c.press_count || 1;
-      return `<div class="call ${c.kind} ${w > state.alert_s ? "late" : ""} ${n >= 3 ? "insist" : ""}">
+      return `<div class="call ${c.kind} ${w > state.alert_s ? "late" : ""} ${n >= 3 ? "insist" : ""} ${claiming.has(String(c.id)) ? "busy" : ""}" data-id="${c.id}" title="Cliquer : un serveur s'en occupe">
         <div class="t">${tableName(c.table_no)}</div>
         <div>${LABEL[c.kind] || c.kind}</div>
         <div class="w">depuis ${fmt(w)}</div>
@@ -276,12 +286,15 @@
     el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"><line class="axis" x1="0" x2="${W}" y1="${H - bottom}" y2="${H - bottom}"/>${parts}</svg>`;
   }
 
-  function renderDevices(devs) {
+  function renderDevices(devs, viewers) {
     const el = document.getElementById("devices");
-    if (!devs.length) { el.innerHTML = '<div class="empty">Aucun appareil n\'a encore donné de nouvelles.</div>'; return; }
-    el.innerHTML = devs.map(d =>
+    const screens = viewers.map(v =>
+      `<div class="dev"><span class="dot on"></span>${v.ip === "127.0.0.1" ? "Écran (Pi)" : v.name ? v.name + " (" + v.ip + ")" : "Écran " + v.ip}
+       <small>tableau de bord ouvert depuis ${hhmm(v.since).slice(0, 5)}</small></div>`);
+    const boxes = devs.map(d =>
       `<div class="dev"><span class="dot ${d.online ? "on" : ""}"></span>${d.name}
-       <small>${d.online ? "en ligne" : "hors ligne"} depuis ${hhmm(d.since).slice(0, 5)}</small></div>`).join("");
+       <small>${d.online ? "en ligne" : "hors ligne"} depuis ${hhmm(d.since).slice(0, 5)}</small></div>`);
+    el.innerHTML = boxes.concat(screens).join("") || '<div class="empty">Aucun appareil n\'a encore donné de nouvelles.</div>';
   }
 
   function render(s) {
@@ -295,7 +308,7 @@
     document.getElementById("maxResp").textContent = fmt(s.stats.max_resp);
 
     document.getElementById("lateLabel").textContent = `En retard (> ${fmt(s.alert_s)})`;
-    renderDevices(s.devices || []);
+    renderDevices(s.devices || [], s.viewers || []);
     bars(document.getElementById("chartHour"), s.hourly, d => d.n, d => `${d.label} : ${d.n} appel(s)`);
     bars(document.getElementById("chartDay"), s.daily, d => d.n,
          d => `${d.label} : ${d.n} appel(s)${d.avg_resp != null ? ", réponse moyenne " + fmt(d.avg_resp) : ""}`);

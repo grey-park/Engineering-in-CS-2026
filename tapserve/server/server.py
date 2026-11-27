@@ -7,11 +7,12 @@ import json
 import queue
 import random
 import sqlite3
+import sys
 import threading
 import time
 from pathlib import Path
 
-from flask import Flask, Response, jsonify, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory
 
 BASE = Path(__file__).parent
 KINDS = ["appel", "addition", "encore"]
@@ -22,6 +23,9 @@ TEST_TABLE = 99
 app = Flask(__name__)
 db_lock = threading.Lock()
 clients: list[queue.Queue] = []
+# écrans qui ont le tableau de bord ouvert
+viewers: dict[int, dict] = {}
+LEASES = Path("/var/lib/misc/dnsmasq.leases")
 state = {"mqtt_online": False, "alert_s": 120}
 # appareils en ligne
 devices: dict[str, dict] = {}
@@ -137,6 +141,17 @@ def on_repress(table: int, kind: int, seq: int):
     if row is not None:
         print(f"[appui] table {table} {KINDS[kind]} : {row['press_count']} appuis")
         changed()
+        return
+    # appel perdu (ex. réinitialisation) : on le rouvre
+    with db_lock:
+        old = find_call(table, KINDS[kind], seq)
+        if old is not None and old["status"] == "cancelled":
+            DB.execute("UPDATE calls SET status='pending', t_cancel=NULL, press_count=press_count+1 WHERE id=?",
+                       (old["id"],))
+            DB.commit()
+    print(f"[appui] table {table} {KINDS[kind]} : appel inconnu du serveur, rouvert")
+    on_call(table, kind, seq, None)
+    changed()
 
 
 def on_claim(table: int, kind: int, seq: int):
@@ -322,6 +337,7 @@ def snapshot() -> dict:
         "stats": stats,
         "per_table": per_table,
         "batteries": batteries,
+        "viewers": sorted(viewers.values(), key=lambda v: v["since"]),
         "devices": sorted(({"name": n, **d} for n, d in devices.items()),
                           key=lambda d: (d["kind"] != "box", d["name"])),
         "hourly": hourly,
@@ -427,10 +443,25 @@ def export_csv():
                     headers={"Content-Disposition": f"attachment; filename={name}"})
 
 
+def device_name(ip: str) -> str:
+    # nom donné au DHCP du Pi (ex. Galaxy-Tab-S5e)
+    try:
+        for line in LEASES.read_text().splitlines():
+            parts = line.split()
+            if len(parts) >= 4 and parts[2] == ip and parts[3] != "*":
+                return parts[3]
+    except OSError:
+        pass
+    return ""
+
+
 @app.route("/events")
 def events():
     q: queue.Queue = queue.Queue(maxsize=20)
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr).removeprefix("::ffff:")
+    viewers[id(q)] = {"ip": ip, "name": device_name(ip), "since": time.time()}
     clients.append(q)
+    broadcast()  # les autres écrans voient le nouveau venu
 
     def stream():
         try:
@@ -442,9 +473,22 @@ def events():
                     yield ": keepalive\n\n"
         finally:
             clients.remove(q)
+            viewers.pop(id(q), None)
+            broadcast()
 
     return Response(stream(), mimetype="text/event-stream",
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+def listen_host() -> str:
+    if sys.platform != "linux":
+        return "0.0.0.0"
+    import socket
+    try:
+        socket.socket(socket.AF_INET6, socket.SOCK_STREAM).close()
+        return "::"
+    except OSError:
+        return "0.0.0.0"
 
 
 if __name__ == "__main__":
@@ -462,4 +506,5 @@ if __name__ == "__main__":
         threading.Thread(target=simulator, daemon=True).start()
     else:
         mqtt_start(args.broker, args.mqtt_port)
-    app.run(host="0.0.0.0", port=args.port, threaded=True)
+    # "::" écoute aussi en IPv6 sur Linux (tapserve.local) ; repli IPv4 si la machine n'a pas d'IPv6
+    app.run(host=listen_host(), port=args.port, threaded=True)
