@@ -1,7 +1,5 @@
 # TapServe
 
-Projet du cours Engineering in CS (HES-SO, 2026).
-
 Le client appuie sur un bouton à sa table, la montre du serveur vibre, le serveur touche l'écran pour dire "J'arrive" et la LED de la table s'allume pour le confirmer.
 
 Le Raspberry Pi fait le lien entre tout ça : il crée le Wi-Fi, reçoit les appels et affiche un tableau de bord pour le gérant.
