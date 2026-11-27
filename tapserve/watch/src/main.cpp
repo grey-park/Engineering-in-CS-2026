@@ -6,6 +6,7 @@
 #define XPOWERS_CHIP_AXP2101
 #include <XPowersLib.h>
 #include <Adafruit_DRV2605.h>
+#include <driver/i2s.h>
 #include "net.h"
 
 // broches
@@ -14,6 +15,10 @@
 #define PIN_TOUCH_SDA  39   // tactile
 #define PIN_TOUCH_SCL  40
 #define TOUCH_ADDR     0x38
+#define PIN_I2S_BCLK   48   // haut-parleur MAX98357A
+#define PIN_I2S_WS     15
+#define PIN_I2S_DOUT   46
+#define SND_RATE       16000
 
 #define SCREEN_INVERT  1
 #define SCREEN_ROTATION 2
@@ -72,10 +77,67 @@ static void powerInit() {
   pmu.enableBattVoltageMeasure();
 }
 
-static void buzz(uint8_t effect = 47) {
-  haptic.setWaveform(0, effect);
-  haptic.setWaveform(1, 0);
+static bool hapticOk = false, soundOk = false;
+
+static void soundInit() {
+  i2s_config_t cfg = {};
+  cfg.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX);
+  cfg.sample_rate = SND_RATE;
+  cfg.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT;
+  cfg.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT;
+  cfg.communication_format = I2S_COMM_FORMAT_STAND_I2S;
+  cfg.dma_buf_count = 4;
+  cfg.dma_buf_len = 256;
+  cfg.tx_desc_auto_clear = true;
+  i2s_pin_config_t pins = {};
+  pins.mck_io_num = I2S_PIN_NO_CHANGE;
+  pins.bck_io_num = PIN_I2S_BCLK;
+  pins.ws_io_num = PIN_I2S_WS;
+  pins.data_out_num = PIN_I2S_DOUT;
+  pins.data_in_num = I2S_PIN_NO_CHANGE;
+  soundOk = i2s_driver_install(I2S_NUM_0, &cfg, 0, nullptr) == ESP_OK &&
+            i2s_set_pin(I2S_NUM_0, &pins) == ESP_OK;
+  Serial.printf("[watch] haut-parleur %s\n", soundOk ? "ok" : "ERREUR");
+}
+
+// bip carré (bloquant, quelques centaines de ms)
+static void beep(uint16_t freq, uint16_t ms, int16_t vol = 6000) {
+  if (!soundOk) return;
+  int16_t buf[2 * 128];
+  uint32_t total = (uint32_t)SND_RATE * ms / 1000, half = SND_RATE / (2 * freq), i = 0;
+  while (i < total) {
+    int n = 0;
+    for (; n < 128 && i < total; n++, i++) {
+      int16_t v = ((i / half) & 1) ? vol : -vol;
+      buf[2 * n] = buf[2 * n + 1] = v;
+    }
+    size_t w; i2s_write(I2S_NUM_0, buf, n * 4, &w, portMAX_DELAY);
+  }
+  i2s_zero_dma_buffer(I2S_NUM_0);
+}
+
+static void vibrate(bool strong) {
+  if (!hapticOk) return;
+  if (strong) {   // 3 vibrations fortes
+    haptic.setWaveform(0, 14);
+    haptic.setWaveform(1, 0x80 | 15);   // pause 150 ms
+    haptic.setWaveform(2, 14);
+    haptic.setWaveform(3, 0x80 | 15);
+    haptic.setWaveform(4, 14);
+    haptic.setWaveform(5, 0);
+  } else {
+    haptic.setWaveform(0, 1);
+    haptic.setWaveform(1, 0);
+  }
   haptic.go();
+}
+
+// alerte : vibration + son ; effect 1 = petit clic
+static void buzz(uint8_t effect = 47) {
+  bool strong = effect != 1;
+  vibrate(strong);
+  if (strong) { beep(2000, 120); delay(80); beep(2600, 180); }
+  else beep(3000, 30, 3000);
 }
 
 static void screenWake() {
@@ -295,12 +357,17 @@ void setup() {
   spr.setColorDepth(8);
   if (!spr.createSprite(240, 240)) Serial.println("[watch] sprite: memoire insuffisante");
 
-  if (haptic.begin(&Wire)) {
+  delay(20);   // laisse le vibreur s'alimenter (BLDO2)
+  hapticOk = haptic.begin(&Wire);
+  if (hapticOk) {
     haptic.selectLibrary(1);
     haptic.setMode(DRV2605_MODE_INTTRIG);
+    haptic.useERM();
+    Serial.println("[watch] vibreur ok");
   } else {
     Serial.println("[watch] DRV2605 introuvable");
   }
+  soundInit();
 
   static char tStatus[48];
   snprintf(tStatus, sizeof(tStatus), "tapserve/watch/%08lx/status", (unsigned long)(uint32_t)ESP.getEfuseMac());

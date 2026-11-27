@@ -242,6 +242,7 @@
     try {
       const r = await fetch(`/api/claim/${id}`, { method: "POST" });
       if (!r.ok) throw new Error(r.status);
+      await refreshState();  // sans attendre le flux en direct
     } catch (err) {
       claiming.delete(id);
       renderPending();
@@ -328,8 +329,18 @@
     checkNewCalls(s.pending);
   }
 
+  // État complet à la demande : après une action, et en secours si le flux en direct se tait
+  let lastMsg = Date.now();
+  async function refreshState() {
+    try {
+      const r = await fetch("/api/state", { cache: "no-store" });
+      if (r.ok) { render(await r.json()); lastMsg = Date.now(); }
+    } catch (e) {}
+  }
+  setInterval(() => { if (Date.now() - lastMsg > 10000) refreshState(); }, 5000);
+
   const es = new EventSource("/events");
-  es.onmessage = e => render(JSON.parse(e.data));
+  es.onmessage = e => { lastMsg = Date.now(); render(JSON.parse(e.data)); };
   es.onerror = () => { document.getElementById("gwtxt").textContent = "Serveur injoignable"; document.getElementById("gwdot").classList.remove("on"); };
   setInterval(renderPending, 1000);
 </script>
